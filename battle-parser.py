@@ -16,6 +16,8 @@ class Pokemon:
         self.current_hp = current_hp
         self.max_hp = max_hp
         self.known_moves = set()  # Track known moves
+        self.ability = None
+        self.fainted = False
 
     def update_hp(self, new_hp):
         difference = int(self.current_hp) - int(new_hp)
@@ -25,8 +27,15 @@ class Pokemon:
 
     def add_move(self, move):
         self.known_moves.add(move)
+        print(f"{self.species} knows {self.known_moves}")
 
+    def update_ability(self, ability):
+        self.ability = ability
+        print(f"{self.species}'s ability is {self.ability}")
 
+    def faint(self):
+        self.fainted = True
+        print(self.species, "fainted")
 
     def __repr__(self):
         return f"{self.species} (Lv.{self.level}, HP: {self.current_hp}/{self.max_hp})"
@@ -69,6 +78,10 @@ class BattleLogParser:
                 self.handle_move(parts)
             elif event_type == '-damage':
                 self.handle_damage(parts)
+            elif event_type == 'faint':
+                self.handle_faint(parts)
+            elif event_type == '-ability':
+                self.handle_ability(parts)
 
     def handle_switch(self, parts):
         """Handle switch/drag events"""
@@ -106,15 +119,16 @@ class BattleLogParser:
         pokemon = self.get_pokemon(player_id, pokemon_species)
         pokemon.add_move(move_name)
 
-        affected_player_id = parts[4].split(':')[0].strip()
-        if len(affected_player_id) == 2:
-            affected_player_id += "a" # TODO
+        if parts[4] != '':
+            affected_player_id = parts[4].split(':')[0].strip()
+            if len(affected_player_id) == 2:
+                affected_player_id += "a" # TODO
 
-        affected_pokemon_species = parts[4].split(':')[1].strip()
+            affected_pokemon_species = parts[4].split(':')[1].strip()
 
-        affected_pokemon = self.get_pokemon(affected_player_id, affected_pokemon_species)
+            affected_pokemon = self.get_pokemon(affected_player_id, affected_pokemon_species)
 
-        print("Turn", self.turn_count, pokemon, "uses", move_name, "into", affected_pokemon)
+            print("Turn", self.turn_count, pokemon, "uses", move_name, "into", affected_pokemon)
 
     def handle_damage(self, parts):
         """Handle damage being taken"""
@@ -133,15 +147,45 @@ class BattleLogParser:
         else:
             raise EnvironmentError
 
+        # TODO damage from things like life orb
+
         pokemon = self.get_pokemon(player_id, pokemon_species)
         damage = pokemon.update_hp(new_hp)
 
-        print("Turn", self.turn_count, pokemon, "takes", damage, "damage")
+        print("Turn", self.turn_count, pokemon, "has taken", damage, "damage")
 
+    def handle_faint(self, parts):
+        """Handle pokemon fainting"""
+        if len(parts) < 3: return
+
+        player_id = parts[2].split(':')[0].strip()
+        if len(player_id) == 2:
+            player_id += "a"  # TODO
+
+        pokemon_species = parts[2].split(':')[1].strip()
+
+        pokemon = self.get_pokemon(player_id, pokemon_species)
+        pokemon.faint()
+
+    def handle_ability(self, parts):
+        """Handle pokemon fainting"""
+        if len(parts) < 3: return
+
+        player_id = parts[2].split(':')[0].strip()
+        if len(player_id) == 2:
+            player_id += "a"  # TODO
+
+        pokemon_species = parts[2].split(':')[1].strip()
+
+        pokemon = self.get_pokemon(player_id, pokemon_species)
+        pokemon.update_ability(parts[3])
 
 
 # Test with a sample log
-with open("replays_gen9randombattle/gen9randombattle-2152949532.json", "r") as f:
+# with open("replays_gen9randombattle/gen9randombattle-2152949532.json", "r") as f:
+#     sample_log = json.load(f)["log"]
+
+with open("replays_gen9randombattle/gen9randombattle-2005603860.json", "r") as f:
     sample_log = json.load(f)["log"]
 
 
@@ -151,6 +195,8 @@ def test_parser():
     # Create and run parser
     parser = BattleLogParser()
     parser.parse_log(test_log)
+
+    print("---")
 
 
 test_parser()
