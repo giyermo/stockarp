@@ -17,6 +17,7 @@ class Pokemon:
         self.max_hp = max_hp
         self.known_moves = set()  # Track known moves
         self.ability = None
+        self.state = "nor"
         self.fainted = False
 
     def update_hp(self, new_hp):
@@ -45,6 +46,7 @@ class BattleLogParser:
     def __init__(self):
         self.teams = {'p1a': {}, 'p2a': {}}  # Stores all Pokémon
         self.active = {'p1a': None, 'p2a': None}  # Active Pokémon
+        self.weather = "none"
         self.turn_count = 0
 
     def get_pokemon(self, player_id, pokemon_species, *details):
@@ -84,6 +86,8 @@ class BattleLogParser:
                 self.handle_ability(parts)
             elif event_type == '-heal':
                 self.handle_heal(parts)
+            elif event_type == '-weather':
+                self.handle_weather(parts)
 
     def handle_switch(self, parts):
         """Handle switch/drag events"""
@@ -103,6 +107,8 @@ class BattleLogParser:
         current_hp, max_hp = hp_str.split("/")
 
         pokemon = self.get_pokemon(player_id, pokemon_species, level, gender, current_hp, max_hp)
+
+        self.active[player_id] = pokemon
 
         print("Turn", self.turn_count, pokemon, "switches in")
 
@@ -183,7 +189,7 @@ class BattleLogParser:
         pokemon.update_ability(parts[3])
 
     def handle_heal(self, parts):
-        """Handle damage being taken"""
+        """Handle heal"""
         if len(parts) < 3: return
 
         player_id = parts[2].split(':')[0].strip()
@@ -205,6 +211,16 @@ class BattleLogParser:
         damage = pokemon.update_hp(new_hp)
 
         print("Turn", self.turn_count, pokemon, "has healed", damage, "hp")
+
+    def handle_weather(self, parts):
+        """Handle weather"""
+        if len(parts) < 3: return
+
+        weather = parts[2].strip()
+
+        self.weather = weather
+
+        print("Weather is", weather)
 
 
 # Test with a sample log
