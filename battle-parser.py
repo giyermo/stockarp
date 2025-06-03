@@ -17,7 +17,7 @@ class Pokemon:
         self.max_hp = max_hp
         self.known_moves = set()  # Track known moves
         self.ability = None
-        self.state = "nor"
+        self.status = None
         self.fainted = False
 
     def update_hp(self, new_hp):
@@ -33,6 +33,10 @@ class Pokemon:
     def update_ability(self, ability):
         self.ability = ability
         print(f"{self.species}'s ability is {self.ability}")
+
+    def update_status(self, status):
+        self.status = status
+        print(f"{self.species} is now paralyzed")
 
     def faint(self):
         self.fainted = True
@@ -74,20 +78,23 @@ class BattleLogParser:
 
             event_type = parts[1].strip()
 
-            if event_type == 'switch':
-                self.handle_switch(parts)
-            elif event_type == 'move':
-                self.handle_move(parts)
-            elif event_type == '-damage':
-                self.handle_damage(parts)
-            elif event_type == 'faint':
-                self.handle_faint(parts)
-            elif event_type == '-ability':
-                self.handle_ability(parts)
-            elif event_type == '-heal':
-                self.handle_heal(parts)
-            elif event_type == '-weather':
-                self.handle_weather(parts)
+            match event_type:
+                case 'switch':
+                    self.handle_switch(parts)
+                case 'move':
+                    self.handle_move(parts)
+                case '-damage':
+                    self.handle_damage(parts)
+                case 'faint':
+                    self.handle_faint(parts)
+                case '-ability':
+                    self.handle_ability(parts)
+                case '-heal':
+                    self.handle_heal(parts)
+                case '-weather':
+                    self.handle_weather(parts)
+                case '-status':
+                    self.handle_status(parts)
 
     def handle_switch(self, parts):
         """Handle switch/drag events"""
@@ -221,6 +228,21 @@ class BattleLogParser:
         self.weather = weather
 
         print("Weather is", weather)
+
+    def handle_status(self, parts):
+        """Handle status"""
+        if len(parts) < 3: return
+
+        player_id = parts[2].split(':')[0].strip()
+        if len(player_id) == 2:
+            player_id += "a"  # TODO
+
+        pokemon_species = parts[2].split(':')[1].strip()
+
+        status = parts[3]
+
+        pokemon = self.get_pokemon(player_id, pokemon_species)
+        pokemon.update_status(status)
 
 
 # Test with a sample log
