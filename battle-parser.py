@@ -1,13 +1,5 @@
 import json
 
-def count_turns(log):
-    turn_count = 0
-    for line in log.split('\n'):
-        if line.startswith('|turn|'):
-            turn_count += 1
-    return turn_count
-
-
 class Pokemon:
     def __init__(self, species, level, gender, current_hp, max_hp):
         self.species = species
@@ -145,6 +137,9 @@ class BattleLogParser:
 
             print("Turn", self.turn_count, pokemon, "uses", move_name, "into", affected_pokemon)
 
+            if len(parts) > 5 and parts[5] == "[miss]":
+                print("It missed!")
+
     def handle_damage(self, parts):
         """Handle damage being taken"""
         if len(parts) < 3: return
@@ -246,10 +241,7 @@ class BattleLogParser:
 
 
 # Test with a sample log
-# with open("replays_gen9randombattle/gen9randombattle-2152949532.json", "r") as f:
-#     sample_log = json.load(f)["log"]
-
-with open("replays_gen9randombattle/gen9randombattle-2005603860.json", "r") as f:
+with open("replays_gen9randombattle/gen9randombattle-2152949532.json", "r") as f:
     sample_log = json.load(f)["log"]
 
 
