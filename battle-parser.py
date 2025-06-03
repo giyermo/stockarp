@@ -18,7 +18,10 @@ class Pokemon:
         self.known_moves = set()  # Track known moves
 
     def update_hp(self, new_hp):
+        difference = int(self.current_hp) - int(new_hp)
         self.current_hp = new_hp
+
+        return difference
 
     def add_move(self, move):
         self.known_moves.add(move)
@@ -64,6 +67,8 @@ class BattleLogParser:
                 self.handle_switch(parts)
             elif event_type == 'move':
                 self.handle_move(parts)
+            elif event_type == '-damage':
+                self.handle_damage(parts)
 
     def handle_switch(self, parts):
         """Handle switch/drag events"""
@@ -110,6 +115,28 @@ class BattleLogParser:
         affected_pokemon = self.get_pokemon(affected_player_id, affected_pokemon_species)
 
         print("Turn", self.turn_count, pokemon, "uses", move_name, "into", affected_pokemon)
+
+    def handle_damage(self, parts):
+        """Handle damage being taken"""
+        if len(parts) < 3: return
+
+        player_id = parts[2].split(':')[0].strip()
+        if len(player_id) == 2:
+            player_id += "a"  # TODO
+
+        pokemon_species = parts[2].split(':')[1].strip()
+
+        if '/' in parts[3]:
+            new_hp, hp_total = parts[3].split('/')
+        elif 'fnt' in parts[3]:
+            new_hp = 0
+        else:
+            raise EnvironmentError
+
+        pokemon = self.get_pokemon(player_id, pokemon_species)
+        damage = pokemon.update_hp(new_hp)
+
+        print("Turn", self.turn_count, pokemon, "takes", damage, "damage")
 
 
 
